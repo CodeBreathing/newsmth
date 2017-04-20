@@ -47,27 +47,33 @@ class newsmthSpider(CrawlSpider):
         board = selector.xpath("//a/@href[contains(.,'nForum/board/')]").extract()
 
         for boardlist in board:
-            boardurl = "http://www.newsmth.net" + boardlist+"?ajax"
-            yield Request(boardurl, callback=self.parse_list)
-    #第二层输入版面首页地址，输出下一页地址
-    def parse_list(self, response):
+            boardurl = "http://www.newsmth.net" + boardlist
+            yield Request(boardurl, callback=self.parse_getpage)
+    #第二层输入版面首页地址，输出可用的每一页地址
+    def parse_getpage(self, response):
         selector =Selector(response)
-        print response.body
-
-        #抓文章内容
+        #在这里抓第一页的各个标题链接
         # article = selector.xpath("//a/@href[contains(.,'nForum/article/')]").extract()
-        # for art in article:
-        #     art ="http://www.newsmth.net"+article
-        #     yield Request()
-        #处理分页(这样静态处理不行)
-        # if "?p=" not in response.url:
-        #     page =response.url+"?p="
-            #pageurl = selector.xpath('//a/@href[contains(.,"' + page + '")]').extract()
-            # for pagenum in pageurl:
-            #     nextpage="http://www.newsmth.net"+ pagenum
-            #     print nextpage
+        # for list in article:
+        #     print list
+        #有5页的话抓5页,没有的话不往下抓
+        for n in range(2,6):
+            page = response.url + "?p="+str(n)
+            toparticle=selector.xpath("//a/@href[contains(.,'nForum/article/')]").extract()[0]
+            yield Request(page, callback=self.parse_list,meta={'toparticle':toparticle})
 
-            #获取主题数
+
+    #第三层：抓取所有可用页数的article
+    def parse_list(self, response):
+        selector=Selector(response)
+        #抓取所有文章标题
+        article = selector.xpath("//a/@href[contains(.,'nForum/article/')]").extract()[0]
+        if article !=response.meta['toparticle']:
+            article = selector.xpath("//a/@href[contains(.,'nForum/article/')]").extract()
+            for list in article:
+                print list
+                #yield Request(list, )
+
 
 
 
